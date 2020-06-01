@@ -1,3 +1,5 @@
+use std::cmp::min;
+
 pub enum BlockNumber {
     ONE,
 }
@@ -35,16 +37,38 @@ impl Block {
     }
 }
 
+pub enum Direction {
+    LEFT,
+    RIGHT,
+    DOWN,
+}
+
 pub struct Board {
+    pub width: u32,
+    pub height: u32,
     pub current_block: Block,
     pub blocks: Vec<Block>,
 }
 
 impl Board {
-    pub fn new(width: u32, _height: u32) -> Self {
+    pub fn new(width: u32, height: u32) -> Self {
         Self {
+            width,
+            height,
             current_block: Block::new(BlockNumber::ONE, (width - 1) / 2, 0),
             blocks: vec![],
         }
+    }
+
+    pub fn move_current_block(&mut self, direction: Direction) {
+        let prev_x = self.current_block.position.x;
+        let prev_y = self.current_block.position.y;
+        match direction {
+            Direction::LEFT => {
+                self.current_block.position.x = if prev_x > 0 { prev_x - 1 } else { 0 }
+            }
+            Direction::RIGHT => self.current_block.position.x = min(self.width - 1, prev_x + 1),
+            Direction::DOWN => self.current_block.position.y = min(self.height - 1, prev_y + 1),
+        };
     }
 }

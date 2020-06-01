@@ -1,4 +1,4 @@
-use crate::model::{Block, Board};
+use crate::model::{Block, Board, Direction};
 use std::io::{stdin, stdout, Write};
 use std::thread::sleep;
 use std::time::Duration;
@@ -26,13 +26,16 @@ fn main() -> Result<()> {
     )?;
     stdout.flush()?;
 
-    let board = Board::new(BOARD_WIDTH as u32, BOARD_HEIGHT as u32);
+    let mut board = Board::new(BOARD_WIDTH as u32, BOARD_HEIGHT as u32);
     draw_board(&mut stdout, &board)?;
 
     for key_result in stdin.keys() {
         match key_result {
             Ok(key) => match key {
                 Key::Esc => break,
+                Key::Left => board.move_current_block(Direction::LEFT),
+                Key::Right => board.move_current_block(Direction::RIGHT),
+                Key::Down => board.move_current_block(Direction::DOWN),
                 _ => {}
             },
             Err(err) => return Err(err.into()),
@@ -56,6 +59,7 @@ fn main() -> Result<()> {
 }
 
 fn draw_board(stdout: &mut impl Write, board: &Board) -> Result<()> {
+    write!(stdout, "{}", termion::clear::All)?;
     for dx in 0..(BOARD_WIDTH + 2) {
         draw_wall(stdout, dx, 0)?;
         draw_wall(stdout, dx, BOARD_HEIGHT + 1)?;
