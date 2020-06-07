@@ -34,9 +34,17 @@ pub fn draw_board(stdout: &mut impl Write, board: &Board) -> Result<()> {
         draw_wall(stdout, 0, dy as u16)?;
         draw_wall(stdout, board.width as u16 + 1, dy as u16)?;
     }
-    draw_block(stdout, board.current_block)?;
+    draw_block(
+        stdout,
+        board.current_block,
+        &termion::color::AnsiValue::grayscale(23).fg_string(),
+    )?;
     for block in &board.blocks {
-        draw_block(stdout, *block)?;
+        draw_block(
+            stdout,
+            *block,
+            &termion::color::AnsiValue::grayscale(11).fg_string(),
+        )?;
     }
 
     Ok(())
@@ -53,10 +61,11 @@ fn draw_wall(stdout: &mut impl Write, x: u16, y: u16) -> Result<()> {
     Ok(())
 }
 
-fn draw_block(stdout: &mut impl Write, block: Block) -> Result<()> {
+fn draw_block(stdout: &mut impl Write, block: Block, color: &str) -> Result<()> {
     write!(
         stdout,
-        "{}┌────┐",
+        "{}{}┌────┐",
+        color,
         termion::cursor::Goto(
             (9 + 6 * block.position.x) as u16,
             (5 + 3 * block.position.y) as u16
@@ -73,11 +82,12 @@ fn draw_block(stdout: &mut impl Write, block: Block) -> Result<()> {
     )?;
     write!(
         stdout,
-        "{}└────┘",
+        "{}└────┘{}",
         termion::cursor::Goto(
             (9 + 6 * block.position.x) as u16,
             (7 + 3 * block.position.y) as u16
-        )
+        ),
+        termion::color::Reset.fg_str()
     )?;
     Ok(())
 }
