@@ -34,9 +34,9 @@ pub fn draw_board(stdout: &mut impl Write, board: &Board) -> Result<()> {
         draw_wall(stdout, 0, dy as u16)?;
         draw_wall(stdout, board.width as u16 + 1, dy as u16)?;
     }
-    draw_block(stdout, &board.current_block)?;
+    draw_block(stdout, board.current_block)?;
     for block in &board.blocks {
-        draw_block(stdout, block)?;
+        draw_block(stdout, *block)?;
     }
 
     Ok(())
@@ -53,7 +53,7 @@ fn draw_wall(stdout: &mut impl Write, x: u16, y: u16) -> Result<()> {
     Ok(())
 }
 
-fn draw_block(stdout: &mut impl Write, block: &Block) -> Result<()> {
+fn draw_block(stdout: &mut impl Write, block: Block) -> Result<()> {
     write!(
         stdout,
         "{}┌────┐",

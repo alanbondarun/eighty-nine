@@ -4,7 +4,7 @@ pub enum BlockNumber {
 }
 
 impl BlockNumber {
-    pub fn to_u32(&self) -> u32 {
+    pub fn to_u32(self) -> u32 {
         match self {
             Self::ONE => 1,
         }

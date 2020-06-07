@@ -1,4 +1,4 @@
-use crate::model::{Block, Board, Direction};
+use crate::model::{Board, Direction};
 use std::io::{stdin, stdout, Write};
 use std::thread::sleep;
 use std::time::Duration;
