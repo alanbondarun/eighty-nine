@@ -1,5 +1,4 @@
-use std::cmp::min;
-
+#[derive(Copy, Clone)]
 pub enum BlockNumber {
     ONE,
 }
@@ -12,6 +11,7 @@ impl BlockNumber {
     }
 }
 
+#[derive(Copy, Clone)]
 pub struct Position {
     pub x: u32,
     pub y: u32,
@@ -23,6 +23,7 @@ impl Position {
     }
 }
 
+#[derive(Copy, Clone)]
 pub struct Block {
     pub number: BlockNumber,
     pub position: Position,
@@ -55,20 +56,88 @@ impl Board {
         Self {
             width,
             height,
-            current_block: Block::new(BlockNumber::ONE, (width - 1) / 2, 0),
+            current_block: Board::default_current_block(width),
             blocks: vec![],
         }
+    }
+
+    fn default_current_block(width: u32) -> Block {
+        Block::new(BlockNumber::ONE, (width - 1) / 2, 0)
     }
 
     pub fn move_current_block(&mut self, direction: Direction) {
         let prev_x = self.current_block.position.x;
         let prev_y = self.current_block.position.y;
+
         match direction {
             Direction::LEFT => {
-                self.current_block.position.x = if prev_x > 0 { prev_x - 1 } else { 0 }
+                self.current_block.position.x = if self.movable_to_left() {
+                    prev_x - 1
+                } else {
+                    prev_x
+                };
             }
-            Direction::RIGHT => self.current_block.position.x = min(self.width - 1, prev_x + 1),
-            Direction::DOWN => self.current_block.position.y = min(self.height - 1, prev_y + 1),
+            Direction::RIGHT => {
+                self.current_block.position.x = if self.movable_to_right() {
+                    prev_x + 1
+                } else {
+                    prev_x
+                };
+            }
+            Direction::DOWN => {
+                if self.movable_to_down() {
+                    self.current_block.position.y = prev_y + 1;
+                } else {
+                    self.blocks.push(self.current_block);
+                    self.current_block = Board::default_current_block(self.width);
+                }
+            }
         };
+    }
+
+    fn movable_to_down(&self) -> bool {
+        let prev_x = self.current_block.position.x;
+        let prev_y = self.current_block.position.y;
+
+        let highest_block = self
+            .blocks
+            .iter()
+            .filter(|block| block.position.x == prev_x)
+            .min_by_key(|block| block.position.y);
+        match highest_block {
+            Some(block) => {
+                prev_y
+                    < if block.position.y > 0 {
+                        block.position.y - 1
+                    } else {
+                        0
+                    }
+            }
+            None => prev_y < self.height - 1,
+        }
+    }
+
+    fn movable_to_left(&self) -> bool {
+        let prev_x = self.current_block.position.x;
+        let prev_y = self.current_block.position.y;
+
+        let is_blocking = self
+            .blocks
+            .iter()
+            .any(|block| block.position.y == prev_y && block.position.x + 1 == prev_x);
+
+        (!is_blocking) && prev_x > 0
+    }
+
+    fn movable_to_right(&self) -> bool {
+        let prev_x = self.current_block.position.x;
+        let prev_y = self.current_block.position.y;
+
+        let is_blocking = self
+            .blocks
+            .iter()
+            .any(|block| block.position.y == prev_y && block.position.x == prev_x + 1);
+
+        (!is_blocking) && prev_x < self.width - 1
     }
 }
