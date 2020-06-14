@@ -1,12 +1,32 @@
+use rand::{thread_rng, Rng};
+
 #[derive(Copy, Clone)]
 pub enum BlockNumber {
-    ONE,
+    One,
+    Two,
+    Three,
+    Five,
+    Eight,
+    Thirteen,
+    TwentyOne,
+    ThrityFour,
+    FiftyFive,
+    EightyNine,
 }
 
 impl BlockNumber {
     pub fn to_u32(self) -> u32 {
         match self {
-            Self::ONE => 1,
+            Self::One => 1,
+            Self::Two => 2,
+            Self::Three => 3,
+            Self::Five => 5,
+            Self::Eight => 8,
+            Self::Thirteen => 13,
+            Self::TwentyOne => 21,
+            Self::ThrityFour => 34,
+            Self::FiftyFive => 55,
+            Self::EightyNine => 89,
         }
     }
 }
@@ -62,7 +82,16 @@ impl Board {
     }
 
     fn default_current_block(width: u32) -> Block {
-        Block::new(BlockNumber::ONE, (width - 1) / 2, 0)
+        let random_value = thread_rng().gen_range(0, 2);
+        Block::new(
+            if random_value < 1 {
+                BlockNumber::One
+            } else {
+                BlockNumber::Two
+            },
+            (width - 1) / 2,
+            0,
+        )
     }
 
     pub fn move_current_block(&mut self, direction: Direction) {
