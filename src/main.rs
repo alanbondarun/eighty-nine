@@ -37,6 +37,8 @@ fn main() -> Result<()> {
             Err(err) => return Err(err.into()),
         }
 
+        board.update();
+
         render::draw_board(&mut stdout, &board)?;
         stdout.flush()?;
 

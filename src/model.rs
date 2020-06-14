@@ -1,6 +1,7 @@
 use rand::{thread_rng, Rng};
+use std::collections::HashMap;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq)]
 pub enum BlockNumber {
     One,
     Two,
@@ -29,9 +30,24 @@ impl BlockNumber {
             Self::EightyNine => 89,
         }
     }
+
+    pub fn next(self) -> Option<Self> {
+        match self {
+            Self::One => Some(Self::Two),
+            Self::Two => Some(Self::Three),
+            Self::Three => Some(Self::Five),
+            Self::Five => Some(Self::Eight),
+            Self::Eight => Some(Self::Thirteen),
+            Self::Thirteen => Some(Self::TwentyOne),
+            Self::TwentyOne => Some(Self::ThrityFour),
+            Self::ThrityFour => Some(Self::FiftyFive),
+            Self::FiftyFive => Some(Self::EightyNine),
+            Self::EightyNine => None,
+        }
+    }
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq)]
 pub struct Position {
     pub x: u32,
     pub y: u32,
@@ -43,7 +59,7 @@ impl Position {
     }
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq)]
 pub struct Block {
     pub number: BlockNumber,
     pub position: Position,
@@ -56,6 +72,11 @@ impl Block {
             position: Position::new(x, y),
         }
     }
+}
+
+pub struct MergeableBlocks {
+    pub from: Block,
+    pub to: Block,
 }
 
 pub enum Direction {
@@ -168,5 +189,102 @@ impl Board {
             .any(|block| block.position.y == prev_y && block.position.x == prev_x + 1);
 
         (!is_blocking) && prev_x < self.width - 1
+    }
+
+    pub fn update(&mut self) {
+        loop {
+            let mergeable_blocks = self.mergeable_blocks();
+            if mergeable_blocks.is_empty() {
+                break;
+            }
+            for blocks in mergeable_blocks {
+                self.merge_blocks(blocks);
+            }
+        }
+    }
+
+    pub fn mergeable_blocks(&self) -> Vec<MergeableBlocks> {
+        let blocks_by_position = self.blocks_by_position();
+        let mut mergeable_blocks = vec![];
+
+        for x in 0..self.width - 1 {
+            for y in 0..self.height {
+                if let Some(left_block) = blocks_by_position.get(&(x, y)) {
+                    if let Some(right_block) = blocks_by_position.get(&(x + 1, y)) {
+                        if left_block
+                            .number
+                            .next()
+                            .map_or(false, |n| n == right_block.number)
+                            && right_block.number.next().is_some()
+                        {
+                            mergeable_blocks.push(MergeableBlocks {
+                                from: **left_block,
+                                to: **right_block,
+                            })
+                        }
+                        if right_block
+                            .number
+                            .next()
+                            .map_or(false, |n| n == left_block.number)
+                            && left_block.number.next().is_some()
+                        {
+                            mergeable_blocks.push(MergeableBlocks {
+                                from: **right_block,
+                                to: **left_block,
+                            })
+                        }
+                    }
+                }
+            }
+        }
+
+        for x in 0..self.width {
+            for y in 0..self.height - 1 {
+                if let Some(bottom_block) = blocks_by_position.get(&(x, y)) {
+                    if let Some(top_block) = blocks_by_position.get(&(x, y + 1)) {
+                        if bottom_block
+                            .number
+                            .next()
+                            .map_or(false, |n| n == top_block.number)
+                            && top_block.number.next().is_some()
+                        {
+                            mergeable_blocks.push(MergeableBlocks {
+                                from: **bottom_block,
+                                to: **top_block,
+                            })
+                        }
+                        if top_block
+                            .number
+                            .next()
+                            .map_or(false, |n| n == bottom_block.number)
+                            && bottom_block.number.next().is_some()
+                        {
+                            mergeable_blocks.push(MergeableBlocks {
+                                from: **top_block,
+                                to: **bottom_block,
+                            })
+                        }
+                    }
+                }
+            }
+        }
+
+        mergeable_blocks
+    }
+
+    fn blocks_by_position(&self) -> HashMap<(u32, u32), &Block> {
+        self.blocks
+            .iter()
+            .map(|block| ((block.position.x, block.position.y), block))
+            .collect()
+    }
+
+    pub fn merge_blocks(&mut self, mergeable_blocks: MergeableBlocks) {
+        self.blocks
+            .retain(|block| block != &mergeable_blocks.from && block != &mergeable_blocks.to);
+        self.blocks.push(Block {
+            position: mergeable_blocks.to.position,
+            number: mergeable_blocks.to.number.next().unwrap(),
+        })
     }
 }
